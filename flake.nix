@@ -1,23 +1,65 @@
 {
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    agenix.url = "github:ryantm/agenix";
   };
   outputs = {
     self,
     nixpkgs,
     nixos-generators,
+    deploy-rs,
+    agenix,
     ...
-  }: {
+  }: let
+    pkgs = nixpkgs.legacyPackages."x86_64-linux";
+  in {
+    devShells.x86_64-linux.default = pkgs.mkShell {
+      buildInputs = [
+        deploy-rs.packages.x86_64-linux.deploy-rs
+        agenix.packages.x86_64-linux.agenix
+      ];
+    };
+
+    nixosConfigurations = {
+      walletconnect-club = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./hosts/walletconnect.club
+          agenix.nixosModule
+        ];
+      };
+    };
+
+    deploy.nodes = {
+      walletconnect-club = {
+        hostname = "164.92.142.84";
+        sshUser = "root";
+        fastConnection = true;
+        profiles.system = {
+          user = "root";
+          path =
+            deploy-rs.lib.x86_64-linux.activate.nixos
+            self.nixosConfigurations.walletconnect-club;
+        };
+      };
+    };
+
+
     packages.x86_64-linux = {
       do = nixos-generators.nixosGenerate {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         modules = [
-          # you can include your own nixos configuration here, i.e.
-          # ./configuration.nix
+          ({config, ...}: {
+            services.openssh = {
+              enable = true;
+              permitRootLogin = "permit-password";
+            };
+            users.users."root".openssh.authorizedKeys.keys = (import ../../secrets/keys.nix).users;
+          })
         ];
         format = "do";
       };

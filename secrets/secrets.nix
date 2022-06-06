@@ -1,5 +1,5 @@
 let
   keys = import ./keys.nix;
 in {
-  "dendrite-service".publicKeys = keys.all;
+  "dendrite-service.age".publicKeys = keys.all;
 }

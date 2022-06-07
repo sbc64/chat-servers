@@ -41,8 +41,8 @@
 
     deploy.nodes = {
       "walletconnect-club" = {
-        #hostname = "164.92.142.84";
-        hostname = "walletconnect.club";
+        hostname = "164.92.142.84";
+        #hostname = "walletconnect.club";
         sshUser = "root";
         fastConnection = true;
         profiles.system = {

@@ -18,6 +18,20 @@
     ...
   }: let
     pkgs = nixpkgs.legacyPackages."x86_64-linux";
+    flakes = {pkgs, ...}: {
+      nix = {
+        extraOptions = ''
+          experimental-features = nix-command flakes
+          keep-outputs = true
+          keep-derivations = true
+        '';
+        trustedUsers = ["root"];
+        gc = {
+          automatic = true;
+          options = "--delete-older-than 10d";
+        };
+      };
+    };
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
       buildInputs = [
@@ -30,6 +44,7 @@
       "walletconnect-club" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
+          flakes
           ({config, ...}: {
             networking.hostName = "walletconnect-club";
           })
